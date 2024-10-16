@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
+import static java.lang.Math.abs;
+
 import android.os.Environment;
 
 import com.qualcomm.hardware.ams.AMSColorSensor;
@@ -23,6 +25,10 @@ public class Tele_Op extends OpMode
 {
     // Control Hub
     //drive motors
+    private DcMotor liftMotor = null;
+
+    private int liftZero;
+
     private DcMotor frontLeftMotor = null;
     private DcMotor frontRightMotor = null;
     private DcMotor backLeftMotor = null;
@@ -30,7 +36,7 @@ public class Tele_Op extends OpMode
 
     //Lift motors
     private DcMotor pullUp = null;
-    private CRServo pullReady = null;
+    private Servo specimenServo = null;
     private CRServo BackdropAngle = null;
 
     private DcMotor pixelLift = null;
@@ -74,7 +80,8 @@ public class Tele_Op extends OpMode
 
     private boolean switchingsquare = false;
     private boolean switchingcross = false;
-
+    private boolean goToHighChamber = false;
+    private boolean isClosed = false;
 
 
     private boolean leftOpen = false;
@@ -140,33 +147,43 @@ public class Tele_Op extends OpMode
     public void init ()
     {
         // Initialize connection to motors
+        // Initialize connection to motors
+        liftMotor = hardwareMap.dcMotor.get("liftMotor");
+
         frontLeftMotor = hardwareMap.dcMotor.get("frontLeftMotor");
         frontRightMotor = hardwareMap.dcMotor.get("frontRightMotor");
         backLeftMotor = hardwareMap.dcMotor.get("backLeftMotor");
         backRightMotor = hardwareMap.dcMotor.get("backRightMotor");
 
-        pullUp = hardwareMap.dcMotor.get("pullUp");
-        pullReady = hardwareMap.crservo.get("pullReady");
+        specimenServo = hardwareMap.servo.get("specimenServo");
+        specimenServo.setPosition(0.4);
+        //pullUp = hardwareMap.dcMotor.get("pullUp");
+        //pullReady = hardwareMap.crservo.get("pullReady");
 
-        pixelLift = hardwareMap.dcMotor.get("pixelLift");
-        pixelAngle = hardwareMap.crservo.get("pixelAngle");
+        //pixelLift = hardwareMap.dcMotor.get("pixelLift");
+        //pixelAngle = hardwareMap.crservo.get("pixelAngle");
 
-        pixelLeft = hardwareMap.crservo.get("pixelLeft");
-        pixelRight = hardwareMap.crservo.get("pixelRight");
+       // pixelLeft = hardwareMap.crservo.get("pixelLeft");
+        //pixelRight = hardwareMap.crservo.get("pixelRight");
 
-        nuclearLaunch = hardwareMap.crservo.get("nuclearLaunch");
-        droneLock = hardwareMap.crservo.get("droneLock");
-        pixelStabber = hardwareMap.crservo.get("pixelStabber");
+        //nuclearLaunch = hardwareMap.crservo.get("nuclearLaunch");
+        //droneLock = hardwareMap.crservo.get("droneLock");
+        //pixelStabber = hardwareMap.crservo.get("pixelStabber");
 
         // Set direction to the motors (may need to change depending on orientation of robot)
         frontLeftMotor.setDirection(DcMotorSimple.Direction.REVERSE);
         frontRightMotor.setDirection(DcMotorSimple.Direction.FORWARD);
         backLeftMotor.setDirection(DcMotorSimple.Direction.REVERSE);
         backRightMotor.setDirection(DcMotorSimple.Direction.FORWARD);
+        // Set direction to the motors (may need to change depending on orientation of robot)
+        liftMotor.setDirection(DcMotorSimple.Direction.FORWARD);
 
-        pullUp.setDirection(DcMotorSimple.Direction.REVERSE);
+        //reset encoders
+        liftZero = liftMotor.getCurrentPosition();
 
-        pixelLift.setDirection(DcMotorSimple.Direction.REVERSE);
+       // pullUp.setDirection(DcMotorSimple.Direction.REVERSE);
+
+        //pixelLift.setDirection(DcMotorSimple.Direction.REVERSE);
 
 
 
@@ -174,8 +191,8 @@ public class Tele_Op extends OpMode
 
         //reset encoders
 
-        pullZero = pullUp.getCurrentPosition();
-        pixelZero = pixelLift.getCurrentPosition();
+        //pullZero = pullUp.getCurrentPosition();
+       // pixelZero = pixelLift.getCurrentPosition();
 
         // Send telemetry to the robot
         telemetry.addLine("Working");
@@ -204,23 +221,25 @@ public class Tele_Op extends OpMode
         telemetry.addData("Front Right", frontRightMotor.getCurrentPosition());
         telemetry.addData("Back Left", backLeftMotor.getCurrentPosition());
         telemetry.addData("Back Right", backRightMotor.getCurrentPosition());
+        int liftMotorPos = liftMotor.getCurrentPosition() - liftZero;
 
-        telemetry.addData("pullUp ", pullUp.getCurrentPosition() );
-        telemetry.addData("pullZero ", pullZero);
-        telemetry.addData("pixelZero ", pixelZero);
-        telemetry.addData("pixelLift ",pixelLift.getCurrentPosition());
+        telemetry.addData("Lift", liftMotorPos);
+        //telemetry.addData("pullUp ", pullUp.getCurrentPosition() );
+        //telemetry.addData("pullZero ", pullZero);
+       // telemetry.addData("pixelZero ", pixelZero);
+       // telemetry.addData("pixelLift ",pixelLift.getCurrentPosition());
 
         currentFrame += 1;
 
 
 
 
-        double pullDirection = gamepad2.left_stick_y;
-        double pixelUp = gamepad2.right_trigger;
-        double pixelDown = gamepad2.left_trigger;
+        //double pullDirection = gamepad2.left_stick_y;
+        //double pixelUp = gamepad2.right_trigger;
+       // double pixelDown = gamepad2.left_trigger;
 
-        double pixelPowerUp;
-        double pixelPowerDown;
+       // double pixelPowerUp;
+       // double pixelPowerDown;
 
 
         double drive = -gamepad1.left_stick_y;
@@ -260,11 +279,11 @@ public class Tele_Op extends OpMode
 
 
         //Front Left Wheel
-        total = Math.abs(tempTurn) + Math.abs(frontLeftPan);
+        total = abs(tempTurn) + abs(frontLeftPan);
         if (total>1)
         {
-            driveWeight = Math.abs(frontLeftPan) / total;
-            turnWeight = Math.abs(tempTurn) / total;
+            driveWeight = abs(frontLeftPan) / total;
+            turnWeight = abs(tempTurn) / total;
 
             frontLeftPower = (frontLeftPan * driveWeight) + (tempTurn * turnWeight);
 
@@ -276,11 +295,11 @@ public class Tele_Op extends OpMode
 
 
         //Front Right Wheel
-        total = Math.abs(tempTurn) + Math.abs(frontRightPan);
+        total = abs(tempTurn) + abs(frontRightPan);
         if (total>1)
         {
-            driveWeight = Math.abs(frontRightPan) / total;
-            turnWeight = Math.abs(tempTurn) / total;
+            driveWeight = abs(frontRightPan) / total;
+            turnWeight = abs(tempTurn) / total;
 
             frontRightPower = (frontRightPan * driveWeight) - (tempTurn * turnWeight);
 
@@ -291,11 +310,11 @@ public class Tele_Op extends OpMode
         }
 
         //Back Left Wheel
-        total = Math.abs(tempTurn) + Math.abs(backLeftPan);
+        total = abs(tempTurn) + abs(backLeftPan);
         if (total>1)
         {
-            driveWeight = Math.abs(backLeftPan) / total;
-            turnWeight = Math.abs(tempTurn) / total;
+            driveWeight = abs(backLeftPan) / total;
+            turnWeight = abs(tempTurn) / total;
 
             backLeftPower = (backLeftPan * driveWeight) + (tempTurn * turnWeight);
 
@@ -306,11 +325,11 @@ public class Tele_Op extends OpMode
         }
 
         //Back Right Wheel
-        total = Math.abs(tempTurn) + Math.abs(backRightPan);
+        total = abs(tempTurn) + abs(backRightPan);
         if (total>1)
         {
-            driveWeight = Math.abs(backRightPan) / total;
-            turnWeight = Math.abs(tempTurn) / total;
+            driveWeight = abs(backRightPan) / total;
+            turnWeight = abs(tempTurn) / total;
 
             backRightPower = (backRightPan * driveWeight) - (tempTurn * turnWeight);
 
@@ -357,7 +376,59 @@ public class Tele_Op extends OpMode
             powerSwitching = false;
         }
 
+        if (gamepad2.cross){
+            goToHighChamber=true;
+        }
+        int liftMotorEncoderRange = 3000;
+        //To prevent drift from bottoming out lift, this low limit is used. Only applicable to speed -0.5
+        int low_limit=100;
+        int high_chamber_limit =1830;
+        if(goToHighChamber) {
+            int direction;
+            if(high_chamber_limit - liftMotorPos>0){
+                direction = 1;
+            }
+            else {
+                direction = -1;
+            }
+        liftMotor.setPower(direction);
+            liftMotor.setPower((double) (high_chamber_limit - liftMotorPos) /100 + direction *0.1);
+            if(abs(high_chamber_limit-liftMotorPos)<30){
+                goToHighChamber=false;
+                liftMotor.setPower(0);
+            }
+        }
+        else {
+            if (gamepad2.dpad_up) {
+                if (liftMotorPos < 4100) {
+                    liftMotor.setPower(0.75);
+                } else {
+                    liftMotor.setPower(0);
+                }
 
+            } else if (gamepad2.dpad_down) {
+                if (liftMotor.getCurrentPosition() > low_limit) {
+                    liftMotor.setPower(-0.5);
+                } else {
+                    liftMotor.setPower(0);
+                }
+
+            } else {
+                liftMotor.setPower(0);
+            }
+        }
+
+        if(gamepad2.square){
+            isClosed = !isClosed;
+        }
+        if(isClosed){
+            specimenServo.setPosition(0.1);
+        }
+        else{
+            specimenServo.setPosition(0.4);
+        }
+
+/*
         //2
         if (gamepad2.dpad_down)
         {
@@ -484,6 +555,8 @@ public class Tele_Op extends OpMode
 
 
         // Clamp for driving power scale
+
+        */
         powerScale = Range.clip(powerScale, 0.2, 1.0);
 
 
@@ -511,16 +584,16 @@ public class Tele_Op extends OpMode
         {
             startUp = true;
             //send power to servos
-            pullReady.setPower(0.67);
-            pixelAngle.setPower(0.095);
-            pixelLeft.setPower(-0.4);
-            pixelRight.setPower(-0.065);
+            //pullReady.setPower(0.67);
+            //pixelAngle.setPower(0.095);
+            //pixelLeft.setPower(-0.4);
+            //pixelRight.setPower(-0.065);
 
 
-            pixelStabber.setPower(-1);
+            //pixelStabber.setPower(-1);
 
-            droneLock.setPower(0.4);
-            nuclearLaunch.setPower(-1);
+            //droneLock.setPower(0.4);
+            //nuclearLaunch.setPower(-1);
 
         }
         telemetry.addData("Left ", frontLeftMotor.getCurrentPosition());
@@ -530,6 +603,7 @@ public class Tele_Op extends OpMode
 
 
         //PullUp
+        /*
         pullPower = Range.clip(pullDirection, -1,1);
 
 
@@ -682,7 +756,7 @@ public class Tele_Op extends OpMode
 
 
 
-
+*/
 
 
 
@@ -696,8 +770,8 @@ public class Tele_Op extends OpMode
         frontRightMotor.setPower(0.0);
         backLeftMotor.setPower(0.0);
         backRightMotor.setPower(0.0);
-
-        pullUp.setPower(0.0);
+        liftMotor.setPower(0);
+       // pullUp.setPower(0.0);
 
     }
 }

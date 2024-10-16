@@ -58,20 +58,41 @@ public class Lift_Test extends OpMode
     {
         telemetry.addLine("\nMotors:");
         telemetry.addData("Lift", liftMotor.getCurrentPosition());
+        telemetry.update();
 
 
         //liftMotor.setPower(1);
         //liftMotor.getCurrentPosition()
-        if (gamepad2.dpad_down)
-        {
 
-        }
+        //True range
+        //int liftMotorEncoderRange = 4100;
+        //Limited range to prevent top heaviness
+        int liftMotorEncoderRange = 3000;
+
         if (gamepad2.dpad_up)
         {
+            if(liftMotor.getCurrentPosition()<4100) {
+                liftMotor.setPower(0.75);
+            }
+            else {
+                liftMotor.setPower(0);
+            }
+
+        }else if (gamepad2.dpad_down)
+        {
+            if(liftMotor.getCurrentPosition()>100) {
+                liftMotor.setPower(-0.5);
+            }
+            else {
+                liftMotor.setPower(0);
+            }
+
+        }
+        else
+        {
+            liftMotor.setPower(0);
         }
 
-        telemetry.addData("Lift ", liftMotor.getCurrentPosition());
-        telemetry.update();
 
 
 
